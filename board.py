@@ -3,29 +3,11 @@ import datetime
 import re
 
 from crisscross.cell import Cell
+from criscross.word import Word
 
 random.seed(datetime.datetime.now())
 
 class Board:
-
-    @classmethod
-    def find_word(self, length, word_structure=None, word_file='files/words.txt'):
-        """Return a word of length matching the word structure of word_structure from
-        the word file word_file if a word can be found"""
-        return_word = None
-        possible_words = []
-        with open(word_file) as f:
-            words = (x for x in f.readlines() if x.strip().isalpha() and len(x.strip()) == length)
-            for word in words:
-                word_found = True
-                for key, value in word_structure.items():
-                             if word[int(key)].upper() != value.upper():
-                                 word_found = False
-                                 continue
-                if word_found == True:
-                    possible_words.append(word.strip().upper())
-        return random.choice(possible_words)
-
 
     def __init__(self, number_of_rows=5, number_of_columns=5, emptySpaces=2):
         if emptySpaces / (number_of_columns * number_of_rows) > .25:
@@ -34,6 +16,7 @@ class Board:
         self.number_of_columns = number_of_columns
         self.emptySpaces = emptySpaces
         self.board = [[Cell(is_blank=False) for x in range(self.number_of_columns)] for x in range(self.number_of_rows)]
+        self.word_map = {}
         self.add_blanks_to_board()
         self.populate_board()
         
@@ -48,15 +31,17 @@ class Board:
         # Pick random spaces and validate them
         for x in range(self.emptySpaces):
             made_blank_space = False
-            max_tries = 1000
+            max_tries = 100
             while made_blank_space == False:
                 max_tries -= 1
                 blank_space_row = random.randint(0, self.number_of_rows-1)
                 blank_space_column = random.randint(0, self.number_of_columns-1)
                 if self.validate_blank_space(blank_space_row, blank_space_column):
+                   self.board[blank_space_row][blank_space_column].value = '-' 
                    made_blank_space = True
                 if max_tries == 0:
-                    raise Exception("Max tries exceded for blank space creation.")
+                    self.board = [[Cell(is_blank=False) for x in range(self.number_of_columns)] for x in range(self.number_of_rows)]
+                    return self.add_blanks_to_board()
 
     def validate_blank_space(self, empty_space_row, empty_space_column):
         """Returns true if the blank space placement doesn't
@@ -92,9 +77,47 @@ class Board:
         return True
                 
     def populate_board(self):
-        pass
+        self.get_word_map()
+        while not self.board_populated() and self.word_map != {}:
+            self.populate_words(max(self.word_map.keys()))
+            self.word_map.pop(max(self.word_map.keys()))
 
-    def add_horizontal_word(self, start_row, start_column, length):
-        pass
-    
-    def add_vertical_word(self, start_row, start_column, length):
+          
+    def get_word_map(self):
+        # Find horizontal words
+        for row in range(self.number_of_rows):
+            mapped_row = list(map(str, self.board[row]))
+            if '-' not in mapped_row:
+                if self.number_of_rows not in self.word_map.keys():
+                    self.word_map[self.number_of_rows] = []
+                self.word_map[self.number_of_rows].append((row, 0, 'horizontal'))
+            else:
+                start_pos = 0
+                blank_count = mapped_row.count('-')
+                for x in range(blank_count):
+                    if mapped_row.index('-') not in self.word_map.keys():
+                        self.word_map[mapped_row.index('-')] = []
+                    self.word_map[mapped_row.index('-', start_pos)].append((row, start_pos, 'horizontal'))
+                    start_pos = mapped_row.index('-')
+        # Find vertical words
+        for column in range(self.number_of_columns):
+            transposed_column = [self.board[x][column] for x in self.number_of_rows]
+            mapped_column = list(map(str, transposed_column))
+            
+
+
+    def board_populated(self):
+        for row in range(self.number_of_rows):
+            for column in range(self.number_of_columns):
+                if self.board[row][column].is_blank == False and \
+                self.board[row][column].value == ' ':
+                    return False
+        return True
+
+    def populate_words(self, key):
+        """Process all of the words of length key"""
+        for word in self.word_map[key]:
+            if word[2] == 'horizontal':
+                word_profile = self.board[word[0]][word[1]:word[1] + key]
+            if word[2] == 'vertical'
+

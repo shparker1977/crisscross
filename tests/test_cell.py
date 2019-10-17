@@ -2,7 +2,7 @@ import crisscross.cell as cell
 
 def test_create_cell():
     test_cell = cell.Cell(is_blank=True)
-    assert test_cell.value == " "
+    assert test_cell.value == "-"
     assert test_cell.display == " "
     test_cell = cell.Cell(is_blank=False, value='S')
     assert test_cell.value == 'S'
