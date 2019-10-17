@@ -3,7 +3,7 @@ import datetime
 import re
 
 from crisscross.cell import Cell
-from criscross.word import Word
+from crisscross.word import Word
 
 random.seed(datetime.datetime.now())
 
@@ -17,7 +17,7 @@ class Board:
         self.emptySpaces = emptySpaces
         self.board = [[Cell(is_blank=False) for x in range(self.number_of_columns)] for x in range(self.number_of_rows)]
         self.word_map = {}
-        self.add_blanks_to_board()
+        self.create_board()
         self.populate_board()
         
     def __str__(self):
@@ -27,7 +27,7 @@ class Board:
         return '\n' + ''.join(rendered_board)
 
 
-    def add_blanks_to_board(self):
+    def create_board(self):
         # Pick random spaces and validate them
         for x in range(self.emptySpaces):
             made_blank_space = False
@@ -41,7 +41,7 @@ class Board:
                    made_blank_space = True
                 if max_tries == 0:
                     self.board = [[Cell(is_blank=False) for x in range(self.number_of_columns)] for x in range(self.number_of_rows)]
-                    return self.add_blanks_to_board()
+                    return self.create_board()
 
     def validate_blank_space(self, empty_space_row, empty_space_column):
         """Returns true if the blank space placement doesn't
@@ -88,9 +88,9 @@ class Board:
         for row in range(self.number_of_rows):
             mapped_row = list(map(str, self.board[row]))
             if '-' not in mapped_row:
-                if self.number_of_rows not in self.word_map.keys():
-                    self.word_map[self.number_of_rows] = []
-                self.word_map[self.number_of_rows].append((row, 0, 'horizontal'))
+                if self.number_of_columns not in self.word_map.keys():
+                    self.word_map[self.number_of_columns] = []
+                self.word_map[self.number_of_columns].append((row, 0, 'horizontal'))
             else:
                 start_pos = 0
                 blank_count = mapped_row.count('-')
@@ -101,9 +101,20 @@ class Board:
                     start_pos = mapped_row.index('-')
         # Find vertical words
         for column in range(self.number_of_columns):
-            transposed_column = [self.board[x][column] for x in self.number_of_rows]
+            transposed_column = list(map(str, [self.board[x][column] for x in range(self.number_of_rows)]))
             mapped_column = list(map(str, transposed_column))
-            
+            if '-' not in mapped_column:
+                if self.number_of_rows not in self.word_map.keys():
+                    self.word_map[self.number_of_rows] = []
+                self.word_map[self.number_of_rows].append((0, column, 'vertical'))
+            else:
+                start_pos = 0
+                blank_count = mapped_row.count('-')
+                for x in range(blank_count):
+                    if mapped_column.index('-') not in self.word_map.keys():
+                        self.word_map[mapped_column.index('-')] = []
+                    self.word_map[mapped_column.index('-', start_pos)].append((start_pos, column, 'vertical'))
+                    start_pos = mapped_row.index('-')
 
 
     def board_populated(self):
@@ -119,5 +130,6 @@ class Board:
         for word in self.word_map[key]:
             if word[2] == 'horizontal':
                 word_profile = self.board[word[0]][word[1]:word[1] + key]
-            if word[2] == 'vertical'
+            if word[2] == 'vertical':
+                word_profile = self.board[word[0]][word[1]:word[1] + key]
 
